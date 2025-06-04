@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulário PDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Estilo de Fundo da Página  (essa parte é css)*/
+        body {
+            font-family: Arial, sans-serif;
+            background-color: hsl(180, 3%, 70%); /* cinza para o fundo */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh; /* Garante que o fundo cubre altura */
+            box-sizing: border-box; /* Inclui padding e borda no tamanho total */
+        }
+
+        h1 {
+            color: #0e0d0d;
+            margin-bottom: 30px;
+        }
+
+        /* Estilo do Formulário */
+        form {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px; /* Bordas arredondadas do formulario*/
+            box-shadow: 0 4px 8px rgba(24, 23, 23, 0.1); /* Sombra suave */
+            width: 100%;
+            max-width: 600px; /* Limita a largura máxima do formulário */
+            margin-bottom: 30px;
+            box-sizing: border-box;
+        }
+
+        form label {
+            display: block; /* Cada label em uma nova linha */
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #070707;
+        }
+
+        /* Estilo para campos de input, select e textarea */
+        form input[type="text"],
+        form input[type="date"],
+        form input[type="email"],
+        form input[type="tel"],
+        form select,
+        form textarea {
+            width: calc(100% - 20px); /* Largura total menos o padding */
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px; /* Bordas arredondadas para os campos */
+            box-sizing: border-box; /* Inclui padding e borda no tamanho total */
+            font-size: 16px;
+        }
+
+        form textarea {
+            resize: vertical; /* Permite redimensionar verticalmente */
+        }
+
+        /* Estilo para o campo de upload de arquivo */
+        form input[type="file"] {
+            margin-top: 5px;
+            margin-bottom: 15px;
+            display: block; /* Garante que o input file fique em uma nova linha */
+        }
+
+        /* Estilo para a pré-visualização da foto */
+        #fotoPreview {
+            display: block; /* Garante que a imagem fique em uma nova linha */
+            margin-top: 10px;
+            margin-bottom: 15px;
+            max-width: 150px; /* Tamanho máximo da pré-visualização */
+            max-height: 150px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            object-fit: cover; /* Garante que a imagem preencha a área sem distorcer */
+        }
+
+        /* Estilo do Botão */
+        form button[type="submit"] {
+            background-color: #12dfd4; /* Cor de fundo azul */
+            color: white; /* Texto branco */
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer; /* Cursor tipo "pointer" */
+            font-size: 18px;
+            transition: background-color 0.3s ease; /* Transição suave ao passar o mouse */
+            width: 100%; /* Largura total */
+            box-sizing: border-box;
+        }
+
+        form button[type="submit"]:hover {
+            background-color: #39dad1; /* Cor azul mais escura ao passar o mouse */
+        }
+
+        /* Estilo da Área de Exibição do Currículo */
+        #resultado {
+            background-color: #ffffff; /* Fundo branco */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px; /* Mesma largura máxima do formulário */
+            margin-top: 20px;
+            box-sizing: border-box;
+            position: relative; /* Para posicionar a foto no resultado */
+        }
+
+        #resultado h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee; /* Linha abaixo do título */
+            padding-bottom: 10px;
+        }
+
+        #resultado p {
+            margin-bottom: 10px; /* Espaçamento entre as seções/linhas */
+            line-height: 1.6; /* Aumenta o espaçamento entre as linhas do texto */
+        }
+
+        #resultado p strong {
+            color: #05123f; /* Títulos destacados */
+            display: inline-block; /* Garante que o strong não quebre a linha */
+            width: 180px; /* Alinha o texto após o strong */
+            vertical-align: top; /* Alinha o texto no topo se a span for multilinha */
+        }
+        
+        #resultado p span {
+            display: inline-block; /* Permite que o span tenha largura */
+            width: calc(100% - 200px); /* Ocupa o restante da largura */
+            vertical-align: top;
+        }
+
+        /* Estilo para a foto no resultado */
+        #res-foto {
+            width: 100px; /* Tamanho da foto no resultado */
+            height: 100px;
+            border-radius: 50%; /* Foto circular */
+            object-fit: cover;
+            position: absolute; /* Posiciona a foto no canto superior direito */
+            top: 20px;
+            right: 20px;
+            border: 2px solid #373738;
+        }
+
+        #resultado button {
+            background-color: #28a745; /* Cor para o botão de PDF */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #resultado button:hover {
+            background-color: #0d611f; /* Cor mais escura ao passar o mouse */
+        }
+
+        /* Estilo para a linha horizontal */
+        hr {
+            border: 0;
+            height: 1px;
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0));
+            width: 80%;
+            margin: 40px auto; /* Espaçamento acima e abaixo da linha */
+        }
+    </style>
+</head>
+<!---html essa parte da pagina----------------------------------------->
+<body>
+    <h1>Cadastro do Currículo</h1>
+        <form id="formulario">
+        <label> Foto de Perfil: <input type="file" id="fotoPerfil" accept="image/*">
+        <img id="fotoPreview" src="#" alt="Pré-visualização da foto" style="display: none;"></label><br><br>
+        <label> Nome completo: <input type="text" id="nomeCompleto" required></label><br><br>
+        <label> Data de nascimento: <input type="date" id="dataNascimento" required> </label><br><br>
+        <label> Email: <input type="email" id="email" required> </label><br><br>
+        <label> Telefone: <input type="tel" id="tel" required> </label><br><br>
+        <label> Idioma(s): <input type="text" id="idiomas" required> </label><br><br>
+        <label> Estado Civil:<select id="estadoCivil" required>
+                <option value="">Selecione</option>
+                <option value="Solteiro(a)">Solteiro(a)</option>
+                <option value="Casado(a)">Casado(a)</option>
+                <option value="Divorciado(a)">Divorciado(a)</option>
+                <option value="Viúvo(a)">Viúvo(a)</option>
+            </select>
+        </label><br><br>
+        <label> CEP: <input type="text" id="cep" maxlength="9" pattern="[0-9]{5}-[0-9]{3}" placeholder="XXXXX-XXX" required> </label><br><br>
+        <label> Estado:<select id="estado" required>
+                <option value="">Selecione</option>
+                <option value="AC">Acre</option>
+                <option value="AL">Alagoas</option>
+                <option value="AP">Amapá</option>
+                <option value="AM">Amazonas</option>
+                <option value="BA">Bahia</option>
+                <option value="CE">Ceará</option>
+                <option value="DF">Distrito Federal</option>
+                <option value="ES">Espírito Santo</option>
+                <option value="GO">Goiás</option>
+                <option value="MA">Maranhão</option>
+                <option value="MT">Mato Grosso</option>
+                <option value="MS">Mato Grosso do Sul</option>
+                <option value="MG">Minas Gerais</option>
+                <option value="PA">Pará</option>
+                <option value="PB">Paraíba</option>
+                <option value="PR">Paraná</option>
+                <option value="PE">Pernambuco</option>
+                <option value="PI">Piauí</option>
+                <option value="RJ">Rio de Janeiro</option>
+                <option value="RN">Rio Grande do Norte</option>
+                <option value="RS">Rio Grande do Sul</option>
+                <option value="RO">Rondônia</option>
+                <option value="RR">Roraima</option>
+                <option value="SC">Santa Catarina</option>
+                <option value="SP">São Paulo</option>
+                <option value="SE">Sergipe</option>
+                <option value="TO">Tocantins</option>
+            </select>
+        </label><br><br>
+        <label> Cursos Complementares: <textarea id="cursosComplementares" rows="5" cols="50" placeholder="Ex: Curso de Excel Avançado..."></textarea>
+        </label><br><br>
+        <label> Formação Acadêmica:<textarea id="formacaoAcademica" rows="5" cols="50" placeholder="Ex: Ciência da Computação - Universidade XYZ (2018-2022)"></textarea>
+        </label><br><br>
+        <label> Objetivos Profissionais: <textarea id="objetivosProfissionais" rows="5" cols="50" placeholder="Ex: Busco uma oportunidade na área de desenvolvimento de software, onde possa aplicar meus conhecimentos e habilidades para contribuir com o crescimento da empresa."></textarea>
+        </label><br><br>
+        <button type="submit">Enviar</button>
+    </form>
+    <hr>
+    <div id="resultado" style="display: none;">
+        
+        <h2>Dados Coletados:</h2>
+        <p><img id="res-foto" src="#" alt="Foto de Perfil" style="display: none;"></p>
+        <p><strong>Nome completo:</strong><span id="res-nomeCompleto"></span></p>
+        <p><strong>Data de nascimento:</strong><span id="res-dataNascimento"></span></p>
+        <p><strong>Email:</strong><span id="res-email"></span></p>
+        <p><strong>Telefone:</strong><span id="res-tel"></span></p>
+        <p><strong>Idioma(s):</strong><span id="res-idiomas"></span></p>
+        <p><strong>Estado Civil:</strong><span id="res-estadoCivil"></span></p>
+        <p><strong>CEP:</strong><span id="res-cep"></span></p>
+        <p><strong>Estado:</strong><span id="res-estado"></span></p>
+        <p><strong>Cursos Complementares:</strong><span id="res-cursosComplementares"></span></p>
+        <p><strong>Formação Acadêmica:</strong><span id="res-formacaoAcademica"></span></p>
+        <p><strong>Objetivos Profissionais:</strong><span id="res-objetivosProfissionais"></span></p>
+
+        <button onclick="gerarPDF()">Gerar PDF</button>
+       </div>
+       <!---js essa parte da pagina----------------------------------------->
+      <script>
+        let fotoDataURL = null;
+        // Listener para a pré-visualização da foto
+        document.getElementById('fotoPerfil').addEventListener('change', function(event) {
+            const input = event.target;
+            const reader = new FileReader();
+            const fotoPreview = document.getElementById('fotoPreview');
+            
+                reader.onload = function(){
+                fotoPreview.src = reader.result;
+                fotoPreview.style.display = 'block'; // Mostra a pré-visualização
+                fotoDataURL = reader.result; // Armazena a URL da imagem
+            };
+            if (input.files && input.files[0]) {
+              reader.readAsDataURL(input.files[0]); // Lê o arquivo como Data URL (base64)
+            } else {
+              fotoPreview.src = '#';
+              fotoPreview.style.display = 'none';
+              fotoDataURL = null;
+            }
+        });
+        document.getElementById('formulario').addEventListener('submit', function(event){
+            event.preventDefault(); // Impede o envio padrão do formulário
+
+            // Variáveis para os valores 
+            const nomeCompleto = document.getElementById('nomeCompleto').value;
+            const dataNascimento = document.getElementById('dataNascimento').value;
+            const email = document.getElementById('email').value;
+            const tel = document.getElementById('tel').value;
+            const idiomas = document.getElementById('idiomas').value;
+            const estadoCivil = document.getElementById('estadoCivil').value;
+            const cep = document.getElementById('cep').value;
+            const estado = document.getElementById('estado').value;
+            const cursosComplementares = document.getElementById('cursosComplementares').value;
+            const formacaoAcademica = document.getElementById('formacaoAcademica').value;
+            const objetivosProfissionais = document.getElementById('objetivosProfissionais').value;
+
+            // Exibindo os dados na seção de resultados 
+            document.getElementById('res-nomeCompleto').textContent = nomeCompleto;
+            document.getElementById('res-dataNascimento').textContent = dataNascimento;
+            document.getElementById('res-email').textContent = email;
+            document.getElementById('res-tel').textContent = tel;
+            document.getElementById('res-idiomas').textContent = idiomas;
+            document.getElementById('res-estadoCivil').textContent = estadoCivil;
+            document.getElementById('res-cep').textContent = cep;
+            document.getElementById('res-estado').textContent = estado;
+            document.getElementById('res-cursosComplementares').textContent = cursosComplementares;
+            document.getElementById('res-formacaoAcademica').textContent = formacaoAcademica;
+            document.getElementById('res-objetivosProfissionais').textContent = objetivosProfissionais;
+            // Exibindo a foto no resultado
+            const resFoto = document.getElementById('res-foto');
+            if (fotoDataURL) {
+                resFoto.src = fotoDataURL;
+                resFoto.style.display = 'block';
+            } else {
+                resFoto.style.display = 'none';
+            }
+
+            document.getElementById('resultado').style.display = 'block'; // Exibe a seção de resultados
+        });
+
+
+        async function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Pegando os dados dos resultados
+            const nomeCompleto = document.getElementById('res-nomeCompleto').textContent;
+            const dataNascimento = document.getElementById('res-dataNascimento').textContent;
+            const email = document.getElementById('res-email').textContent;
+            const tel = document.getElementById('res-tel').textContent;
+            const idiomas = document.getElementById('res-idiomas').textContent;
+            const estadoCivil = document.getElementById('res-estadoCivil').textContent;
+            const cep = document.getElementById('res-cep').textContent;
+            const estado = document.getElementById('res-estado').textContent;
+            const cursosComplementares = document.getElementById('res-cursosComplementares').textContent;
+            const formacaoAcademica = document.getElementById('res-formacaoAcademica').textContent;
+            const objetivosProfissionais = document.getElementById('res-objetivosProfissionais').textContent;
+
+            let yPosition = 20; // Posição Y inicial para o texto no PDF, com mais margem superior
+
+            // --- Seção de Dados Pessoais ---
+            doc.setFontSize(22); // Título maior para o nome
+            doc.setFont("helvetica", "bold");
+            doc.text(nomeCompleto, 20, yPosition);
+            yPosition += 10;
+
+            doc.setFontSize(10); // Fonte menor para detalhes de contato
+            doc.setFont("helvetica", "normal");
+            doc.text(`Data de Nascimento: ${dataNascimento}`, 20, yPosition);
+            yPosition += 7;
+            doc.text(`Email: ${email}`, 20, yPosition);
+            yPosition += 7;
+            doc.text(`Telefone: ${tel}`, 20, yPosition);
+            yPosition += 7;
+            doc.text(`Estado Civil: ${estadoCivil}`, 20, yPosition);
+            yPosition += 7;
+            doc.text(`CEP: ${cep}, ${estado}`, 20, yPosition);
+            yPosition += 15;
+
+            // Adicionando a foto de perfil
+            if (fotoDataURL) {
+                const fotoWidth = 40;
+                const fotoHeight = 40;
+                const fotoX = 150; // Posição X da foto (ajustar conforme necessário)
+                const fotoY = 20;  // Posição Y da foto (ajustar conforme necessário)
+                doc.addImage(fotoDataURL, 'JPEG', fotoX, fotoY, fotoWidth, fotoHeight);
+            }
+
+            // Linha separadora
+            doc.setDrawColor(0, 0, 0); // Cor da linha preta
+            doc.line(20, yPosition, 190, yPosition); // Desenha uma linha horizontal
+            yPosition += 10;
+
+            // --- Objetivos Profissionais ---
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Objetivos Profissionais", 20, yPosition);
+            yPosition += 8;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            const splitObjetivos = doc.splitTextToSize(objetivosProfissionais, 170); // 170 é a largura máxima
+            doc.text(splitObjetivos, 20, yPosition);
+            yPosition += (splitObjetivos.length * 7) + 10; // Aumenta a posição Y com base no número de linhas e adiciona margem
+
+            // Linha separadora
+            doc.line(20, yPosition, 190, yPosition);
+            yPosition += 10;
+
+            // --- Formação Acadêmica ---
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Formação Acadêmica", 20, yPosition);
+            yPosition += 8;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            const splitFormacao = doc.splitTextToSize(formacaoAcademica, 170);
+            doc.text(splitFormacao, 20, yPosition);
+            yPosition += (splitFormacao.length * 7) + 10;
+
+            // Linha separadora
+            doc.line(20, yPosition, 190, yPosition);
+            yPosition += 10;
+
+            // --- Cursos Complementares ---
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Cursos Complementares", 20, yPosition);
+            yPosition += 8;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            const splitCursos = doc.splitTextToSize(cursosComplementares, 170);
+            doc.text(splitCursos, 20, yPosition);
+            yPosition += (splitCursos.length * 7) + 10;
+
+            // Linha separadora
+            doc.line(20, yPosition, 190, yPosition);
+            yPosition += 10;
+            
+            // --- Idiomas ---
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("Idiomas", 20, yPosition);
+            yPosition += 8;
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            doc.text(idiomas, 20, yPosition);
+            yPosition += 10;
+
+
+            doc.save("curriculo.pdf");
+        }
+    </script>
+</body>
+</html>
